@@ -1,9 +1,57 @@
-import { Play, Activity, ExternalLink } from 'lucide-react';
+import { useEffect } from 'react';
+import { Play, Activity, ExternalLink, Heart } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 import { useAppStore } from '../store';
 import type { ITunesTrack } from '../services/SearchService';
 
 export default function SearchResults() {
-  const { searchResults, isSearching, currentTrack, setCurrentTrack, setIsPlaying } = useAppStore();
+  const { searchResults, isSearching, currentTrack, setCurrentTrack, setIsPlaying, userSession, userFavorites, toggleFavorite, setUserFavorites } = useAppStore();
+
+  // Load favorites from Supabase on mount
+  useEffect(() => {
+    if (userSession?.user?.id) {
+       const loadFavs = async () => {
+         const { data, error } = await supabase.from('user_favorites').select('*').eq('user_id', userSession.user.id);
+         if (!error && data) {
+           setUserFavorites(data.map((f: any) => ({
+             trackId: f.track_id,
+             artistName: f.artist_name,
+             trackName: f.track_name,
+             artworkUrl100: f.artwork_url,
+             collectionName: '',
+             previewUrl: ''
+           })));
+         }
+       };
+       loadFavs();
+    }
+  }, [userSession, setUserFavorites]);
+
+  const handleToggleFavorite = async (e: React.MouseEvent, track: ITunesTrack) => {
+    e.stopPropagation();
+    if (!userSession) {
+      alert("Logge dich ein, um Favoriten permanent in der Cloud zu speichern!");
+      toggleFavorite(track);
+      return;
+    }
+
+    const { trackId, artistName, trackName, artworkUrl100 } = track;
+    const isFav = userFavorites.some(t => t.trackId === trackId);
+
+    if (isFav) {
+      const { error } = await supabase.from('user_favorites').delete().eq('user_id', userSession.user.id).eq('track_id', trackId);
+      if (!error) toggleFavorite(track);
+    } else {
+      const { error } = await supabase.from('user_favorites').insert([{
+        user_id: userSession.user.id,
+        track_id: trackId,
+        artist_name: artistName,
+        track_name: trackName,
+        artwork_url: artworkUrl100
+      }]);
+      if (!error) toggleFavorite(track);
+    }
+  };
 
   if (isSearching) {
     return (
@@ -53,6 +101,17 @@ export default function SearchResults() {
             
             <button className="btn-icon" style={{ flexShrink: 0, width: '36px', height: '36px' }} onClick={(e) => { e.stopPropagation(); handlePlay(track); }}>
               <Play size={16} fill="currentColor" />
+            </button>
+            <button 
+              className="btn-icon" 
+              style={{ 
+                flexShrink: 0, width: '36px', height: '36px', 
+                color: userFavorites.some(t => t.trackId === track.trackId) ? 'var(--accent-pink)' : 'var(--text-secondary)',
+                borderColor: userFavorites.some(t => t.trackId === track.trackId) ? 'var(--accent-pink)' : 'var(--glass-border)'
+              }} 
+              onClick={(e) => handleToggleFavorite(e, track)}
+            >
+              <Heart size={16} fill={userFavorites.some(t => t.trackId === track.trackId) ? "currentColor" : "none"} />
             </button>
             <a 
               href={`https://www.youtube.com/results?search_query=${encodeURIComponent(track.artistName + ' ' + track.trackName)}`}

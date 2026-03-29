@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Search, Mic, Sparkles, Compass, X, Play, Layout } from 'lucide-react';
+import { supabase } from './services/supabaseClient';
 import { useAppStore } from './store';
 import { searchiTunes } from './services/SearchService';
 import SearchResults from './components/SearchResults';
@@ -17,7 +18,8 @@ function App() {
     setIsSearching, searchResults, setSearchResults, 
     isPlaying, setMicAudioData, 
     appMode, setAppMode, 
-    selectedArtist, setSelectedArtist 
+    selectedArtist, setSelectedArtist,
+    userSession
   } = useAppStore();
 
   const [showGenerator, setShowGenerator] = useState(false);
@@ -49,6 +51,11 @@ function App() {
         const results = await searchiTunes(searchQuery, modeReq);
         setSearchResults(results);
         setIsSearching(false);
+
+        // Log search to Supabase History
+        if (userSession?.user?.id) {
+           await supabase.from('search_history').insert([{ user_id: userSession.user.id, query: searchQuery }]);
+        }
       } else {
         if (!selectedArtist) setSearchResults([]);
       }

@@ -33,6 +33,10 @@ interface AppState {
   selectedArtist: any | null;
   setSelectedArtist: (artist: any | null) => void;
 
+  userFavorites: ITunesTrack[];
+  setUserFavorites: (favorites: ITunesTrack[]) => void;
+  toggleFavorite: (track: ITunesTrack) => void;
+
   userSession: any | null;
   setUserSession: (session: any | null) => void;
 }
@@ -69,6 +73,17 @@ export const useAppStore = create<AppState>((set) => ({
 
   selectedArtist: null,
   setSelectedArtist: (artist) => set({ selectedArtist: artist }),
+
+  userFavorites: [],
+  setUserFavorites: (favorites) => set({ userFavorites: favorites }),
+  toggleFavorite: (track) => set((state) => {
+    const isFav = state.userFavorites.some(t => t.trackId === track.trackId);
+    if (isFav) {
+      return { userFavorites: state.userFavorites.filter(t => t.trackId !== track.trackId) };
+    } else {
+      return { userFavorites: [...state.userFavorites, track] };
+    }
+  }),
 
   userSession: null,
   setUserSession: (session) => set({ userSession: session })
