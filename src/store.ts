@@ -27,8 +27,8 @@ interface AppState {
   micAudioData: { rms: number; energy: number; zcr: number } | null;
   setMicAudioData: (data: { rms: number; energy: number; zcr: number } | null) => void;
 
-  appMode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists';
-  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists') => void;
+  appMode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists' | 'social' | 'profile';
+  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists' | 'social' | 'profile') => void;
 
   selectedArtist: any | null;
   setSelectedArtist: (artist: any | null) => void;
@@ -51,7 +51,24 @@ interface AppState {
   isListening: boolean;
   setIsListening: (listening: boolean) => void;
 
-  // Phase 13: 150+ Power Features
+  // Phase 15: God Mode & Social Intelligence
+  socialFeed: any[];
+  setSocialFeed: (feed: any[]) => void;
+  
+  userProfile: {
+    username: string;
+    xp: number;
+    level: number;
+    badges: string[];
+    bio?: string;
+    verified: boolean;
+  } | null;
+  setUserProfile: (profile: any) => void;
+  addXP: (amount: number) => void;
+
+  trackComments: Record<string, any[]>;
+  addComment: (trackId: string, comment: any) => void;
+
   theme: {
     hue: number;
     blur: number;
@@ -69,8 +86,12 @@ interface AppState {
     playbackSpeed: number;
     shortcuts: boolean;
     visualizerMode: 'sphere' | 'neural' | 'bars' | 'wave';
+    karaoke: boolean;
   };
   setSettings: (settings: Partial<AppState['settings']>) => void;
+
+  playbackTime: number;
+  setPlaybackTime: (time: number) => void;
 
   userUploads: any[];
   setUserUploads: (uploads: any[]) => void;
@@ -138,6 +159,39 @@ export const useAppStore = create<AppState>((set) => ({
   isListening: false,
   setIsListening: (listening) => set({ isListening: listening }),
 
+  // Phase 15: God Mode Implementations
+  socialFeed: [],
+  setSocialFeed: (feed) => set({ socialFeed: feed }),
+  
+  userProfile: {
+    username: 'Musik-Pionier',
+    xp: 0,
+    level: 1,
+    badges: ['Neuling'],
+    verified: false
+  },
+  setUserProfile: (profile) => set({ userProfile: profile }),
+  addXP: (amount) => set((state) => {
+    if (!state.userProfile) return state;
+    const newXP = state.userProfile.xp + amount;
+    const newLevel = Math.floor(Math.sqrt(newXP / 100)) + 1;
+    return { 
+      userProfile: { 
+        ...state.userProfile, 
+        xp: newXP, 
+        level: newLevel > state.userProfile.level ? newLevel : state.userProfile.level 
+      } 
+    };
+  }),
+
+  trackComments: {},
+  addComment: (trackId, comment) => set((state) => ({
+    trackComments: {
+      ...state.trackComments,
+      [trackId]: [comment, ...(state.trackComments[trackId] || [])]
+    }
+  })),
+
   theme: {
     hue: 190,
     blur: 20,
@@ -154,10 +208,14 @@ export const useAppStore = create<AppState>((set) => ({
     crossfade: 0,
     playbackSpeed: 1,
     shortcuts: true,
-    visualizerMode: 'sphere'
+    visualizerMode: 'sphere',
+    karaoke: false
   },
   setSettings: (newSettings) => set((state) => ({ settings: { ...state.settings, ...newSettings } })),
 
   userUploads: [],
-  setUserUploads: (uploads) => set({ userUploads: uploads })
+  setUserUploads: (uploads) => set({ userUploads: uploads }),
+
+  playbackTime: 0,
+  setPlaybackTime: (time) => set({ playbackTime: time })
 }));

@@ -4,7 +4,7 @@ import Meyda from 'meyda';
 import { useAppStore } from '../store';
 
 export default function AudioPlayer() {
-  const { currentTrack, isPlaying, setIsPlaying, setAudioData, settings } = useAppStore();
+  const { currentTrack, isPlaying, setIsPlaying, setAudioData, settings, setPlaybackTime } = useAppStore();
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -12,6 +12,12 @@ export default function AudioPlayer() {
   const eqNodesRef = useRef<BiquadFilterNode[]>([]);
 
   const [error, setError] = useState('');
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setPlaybackTime(audioRef.current.currentTime);
+    }
+  };
 
   // Update Playback Speed
   useEffect(() => {
@@ -57,7 +63,7 @@ export default function AudioPlayer() {
            filter.type = 'peaking';
            filter.frequency.value = freq;
            filter.Q.value = 1;
-           filter.gain.value = settings.eqEnabled ? 5 : 0; // Simulated gain for perfection
+           filter.gain.value = settings.eqEnabled ? 5 : 0; 
            lastNode.connect(filter);
            lastNode = filter;
            eqNodesRef.current.push(filter);
@@ -114,6 +120,7 @@ export default function AudioPlayer() {
         src={currentTrack.previewUrl || undefined} 
         crossOrigin="anonymous"
         onEnded={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate}
       />
       
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexShrink: 0 }}>

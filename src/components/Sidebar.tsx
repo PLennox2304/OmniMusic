@@ -18,11 +18,14 @@ function Sidebar() {
     { id: 'home', icon: <Home size={20} />, label: 'Home Universe' },
     { id: 'artists', icon: <Users size={20} />, label: 'Künstler-Nexus' },
     { id: 'timemachine', icon: <Clock size={20} />, label: 'Zeitmaschine' },
+    { id: 'social', icon: <Users size={20} />, label: 'Social Hub' },
     { id: 'scanner', icon: <Radar size={20} />, label: 'Galactic Scanner' },
-    { id: 'aistudio', icon: <Sparkles size={20} />, label: 'AI Studio' },
+    { id: 'playlists', icon: <ListMusic size={20} />, label: 'Musik-Galaxien' },
+    { id: 'cloud', icon: <Cloud size={20} />, label: 'Cloud Storage' },
+    { id: 'profile', icon: <UserCircle size={20} />, label: 'Profile Nexus' },
+    { id: 'creator', icon: <Sparkles size={20} />, label: 'Creator Nexus' },
     { id: 'design', icon: <Palette size={20} />, label: 'Design Studio' },
     { id: 'power', icon: <Zap size={20} />, label: 'Power Hub' },
-    { id: 'cloud', icon: <Cloud size={20} />, label: 'Cloud Storage' },
   ];
 
   return (

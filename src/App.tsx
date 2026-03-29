@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Mic, Sparkles, Compass, X, Layout, Palette, Zap, Cloud } from 'lucide-react';
+import { Search, Mic, Sparkles, Compass, X, Layout, Palette, Zap, Cloud, Users, UserCircle, Crown, Activity } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { useAppStore } from './store';
 import { deepSearchArtist, recognizeMusic, searchiTunes } from './services/SearchService';
@@ -16,17 +16,23 @@ import DesignStudio from './components/DesignStudio';
 import PowerHub from './components/PowerHub';
 import UploadHub from './components/UploadHub';
 import PlaylistView from './components/PlaylistView';
+import SocialSpace from './components/SocialSpace';
+import ProfileNexus from './components/ProfileNexus';
+import CreatorNexus from './components/CreatorNexus';
+import SpectrumVisualizer from './components/SpectrumVisualizer';
+import AIInsight from './components/AIInsight';
+import LyricsKaraoke from './components/LyricsKaraoke';
 import { getUserUploads } from './services/StorageService';
 
 export default function App() {
   const { 
     appMode, setAppMode, searchQuery, setSearchQuery, 
     searchResults, setSearchResults, setIsSearching,
-    setCurrentTrack, setIsPlaying,
+    currentTrack, setCurrentTrack, isPlaying, setIsPlaying,
     userSession, setUserSession, isAnalyzing, setIsAnalyzing,
     isListening, setIsListening,
     selectedArtist, setSelectedArtist,
-    theme, setUserUploads
+    theme, setUserUploads, userProfile, addXP, settings
   } = useAppStore();
 
   const [cinematicMode, setCinematicMode] = useState(false);
@@ -70,6 +76,16 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, [setUserSession, setUserUploads]);
 
+  // XP Gamification Loop
+  useEffect(() => {
+    if (isPlaying && currentTrack) {
+       const xpInterval = setInterval(() => {
+          addXP(5);
+       }, 30000); // 5 XP every 30 seconds of listening
+       return () => clearInterval(xpInterval);
+    }
+  }, [isPlaying, currentTrack, addXP]);
+
   // Search Logic (Artistic Refinement)
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -112,6 +128,7 @@ export default function App() {
             setCurrentTrack(track);
             setIsPlaying(true);
             setSearchResults([track]);
+            addXP(50); // Massive XP for discovering via mic
           } else {
             setSearchQuery('Keine Übereinstimmung gefunden.');
           }
@@ -138,21 +155,39 @@ export default function App() {
       {!cinematicMode && <Sidebar />}
 
       <div className="main-wrapper">
-        <header className="header container flex-between">
+        <header className="header container flex-between" style={{ padding: '1.5rem 2rem' }}>
           <div className="logo flex-center" onClick={() => { setAppMode('home'); setSearchQuery(''); }}>
             <div className="logo-icon ripple"></div>
             <h1 className="logo-text">OMNI<span>MUSIC</span></h1>
           </div>
 
+          {/* God Mode XP Bar */}
+          {!cinematicMode && userProfile && (
+             <div className="flex-center" style={{ gap: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.5rem 1.5rem', borderRadius: '50px', border: '1px solid var(--glass-border)' }}>
+                <div style={{ textAlign: 'right' }}>
+                   <div style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--accent-cyan)', letterSpacing: '1px' }}>LVL {userProfile.level}</div>
+                   <div style={{ width: '100px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${userProfile.xp % 100}%`, height: '100%', background: 'var(--accent-cyan)' }}></div>
+                   </div>
+                </div>
+                <div className="btn-icon" onClick={() => setAppMode('profile')} style={{ width: 40, height: 40, background: 'var(--accent-cyan)', color: 'black' }}>
+                   <UserCircle size={24} />
+                </div>
+             </div>
+          )}
+
           <div className="header-actions flex-center">
+            <button className="btn-icon" onClick={() => setAppMode('social')} title="Social Hub">
+              <Users size={20} />
+            </button>
+            <button className="btn-icon" onClick={() => setAppMode('creator')} title="Creator Nexus">
+              <Crown size={20} />
+            </button>
             <button className="btn-icon" onClick={() => setAppMode('design')} title="Design Studio">
               <Palette size={20} />
             </button>
             <button className="btn-icon" onClick={() => setAppMode('power')} title="Power Hub">
                <Zap size={20} />
-            </button>
-            <button className="btn-icon" onClick={() => setAppMode('cloud')} title="Cloud Storage">
-               <Cloud size={20} />
             </button>
             <button className="btn-icon" title="Kino-Modus" onClick={() => setCinematicMode(!cinematicMode)}>
               <Layout size={20} />
@@ -173,10 +208,11 @@ export default function App() {
             transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center'
+            alignItems: 'center',
+            paddingBottom: '200px'
           }}>
             
-            {/* Conditional Mode Rendering - Phase 13 Global Matrix */}
+            {/* Conditional Mode Rendering - Phase 15 God Mode Matrix */}
             {appMode === 'timemachine' && <TimeMachine />}
             {appMode === 'scanner' && <ScannerView />}
             {appMode === 'aistudio' && <AIGenerator />}
@@ -184,13 +220,16 @@ export default function App() {
             {appMode === 'power' && <PowerHub />}
             {appMode === 'cloud' && <UploadHub />}
             {appMode === 'playlists' && <PlaylistView />}
+            {appMode === 'social' && <SocialSpace />}
+            {appMode === 'profile' && <ProfileNexus />}
+            {appMode === 'creator' && <CreatorNexus />}
 
             {(appMode === 'home' || appMode === 'artists') && (
-              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
                 
                 {/* Hero Header */}
                 {!searchQuery && !selectedArtist && (
-                  <div className="hero-section text-center animate-up" style={{ marginBottom: '3rem' }}>
+                  <div className="hero-section text-center animate-up" style={{ marginBottom: '1rem' }}>
                     {appMode === 'home' ? (
                       <>
                         <h2 className="hero-title" style={{ fontSize: '5rem', lineHeight: 0.9 }}>OMNI<span>MUSIC</span></h2>
@@ -207,7 +246,7 @@ export default function App() {
 
                 {/* Artist Profile View */}
                 {selectedArtist && (
-                  <div className="animate-fade-in glass-panel" style={{ width: '100%', maxWidth: '1000px', marginBottom: '3rem', display: 'flex', alignItems: 'flex-end', gap: '3rem', padding: '4rem', position: 'relative' }}>
+                  <div className="animate-fade-in glass-panel" style={{ width: '100%', maxWidth: '1000px', marginBottom: '1rem', display: 'flex', alignItems: 'flex-end', gap: '3rem', padding: '4rem', position: 'relative' }}>
                      <div style={{ width: '250px', height: '250px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', flexShrink: 0 }}>
                         <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${selectedArtist.artistName}&backgroundColor=6366f1`} alt={selectedArtist.artistName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                      </div>
@@ -230,7 +269,7 @@ export default function App() {
                   <div className="search-wrapper animate-up" style={{ 
                     width: '100%', 
                     maxWidth: (searchQuery ? '1000px' : '900px'), 
-                    marginBottom: '3.5rem',
+                    marginBottom: '1.5rem',
                     transform: searchQuery ? 'translateY(-30px)' : 'none',
                     transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
                   }}>
@@ -266,6 +305,23 @@ export default function App() {
                         {(isListening || isAnalyzing) && <div className="mic-pulse"></div>}
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {/* God Mode Intelligence Layer */}
+                {isPlaying && currentTrack && !searchQuery && (
+                  <div className="animate-fade-in" style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
+                     <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+                        <button className={`btn ${settings.karaoke ? 'btn-primary' : 'btn-glass'}`} onClick={() => useAppStore.getState().setSettings({ karaoke: !settings.karaoke })}>
+                           <Activity size={16} /> {settings.karaoke ? 'Lyrics Aus' : 'Karaoke Mode'}
+                        </button>
+                        <button className="btn btn-glass" title="Frequenz-Analyse">
+                           <Zap size={16} /> Spektrum
+                        </button>
+                     </div>
+                     <SpectrumVisualizer />
+                     {settings.karaoke && <LyricsKaraoke />}
+                     <AIInsight />
                   </div>
                 )}
 
