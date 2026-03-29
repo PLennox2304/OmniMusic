@@ -80,7 +80,7 @@ export default function AudioPlayer() {
     }}>
       <audio 
         ref={audioRef} 
-        src={currentTrack.previewUrl} 
+        src={currentTrack.previewUrl || undefined} 
         crossOrigin="anonymous"
         onEnded={() => setIsPlaying(false)}
       />
