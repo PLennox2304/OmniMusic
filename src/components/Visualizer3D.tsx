@@ -35,12 +35,22 @@ function AudioReactiveSphere() {
     meshRef.current.rotation.x += 0.005 + (currentRms * 0.05);
     meshRef.current.rotation.y += 0.005 + (currentRms * 0.05);
 
-    // Change color based on energy
-    const hue = (time * 0.1) % 1;
-    const color = new THREE.Color().setHSL(hue, 0.8, 0.5 + currentEnergy * 0.2);
-    materialRef.current.color.lerp(color, 0.1);
-    materialRef.current.emissive.lerp(color, 0.1);
-    materialRef.current.emissiveIntensity = currentEnergy * 2;
+    // Change color based on energy and mode
+    let hue = (time * 0.1) % 1;
+    let saturation = 0.8;
+    let lightness = 0.5 + currentEnergy * 0.2;
+    
+    if (activeData === micAudioData && micAudioData) {
+      // Neural Pink / AI mode
+      materialRef.current.color.lerp(new THREE.Color('#e96443'), 0.1);
+      materialRef.current.emissive.lerp(new THREE.Color('#904e95'), 0.1);
+    } else {
+      const color = new THREE.Color().setHSL(hue, saturation, lightness);
+      materialRef.current.color.lerp(color, 0.1);
+      materialRef.current.emissive.lerp(color, 0.1);
+    }
+    
+    materialRef.current.emissiveIntensity = currentEnergy * 3;
   });
 
   return (
