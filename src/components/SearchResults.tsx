@@ -19,7 +19,8 @@ export default function SearchResults() {
              trackName: f.track_name,
              artworkUrl100: f.artwork_url,
              collectionName: '',
-             previewUrl: ''
+             previewUrl: '',
+             primaryGenreName: ''
            })));
          }
        };

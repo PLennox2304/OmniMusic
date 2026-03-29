@@ -1,3 +1,5 @@
+import { supabase } from './supabaseClient';
+
 export interface ITunesTrack {
   trackId: number;
   artistName: string;
@@ -5,6 +7,7 @@ export interface ITunesTrack {
   previewUrl: string | null;
   artworkUrl100: string;
   collectionName: string;
+  primaryGenreName: string;
 }
 
 export interface ITunesArtist {
