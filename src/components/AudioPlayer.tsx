@@ -4,13 +4,21 @@ import Meyda from 'meyda';
 import { useAppStore } from '../store';
 
 export default function AudioPlayer() {
-  const { currentTrack, isPlaying, setIsPlaying, setAudioData } = useAppStore();
+  const { currentTrack, isPlaying, setIsPlaying, setAudioData, settings } = useAppStore();
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const analyzerRef = useRef<any>(null);
+  const eqNodesRef = useRef<BiquadFilterNode[]>([]);
 
   const [error, setError] = useState('');
+
+  // Update Playback Speed
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = settings.playbackSpeed;
+    }
+  }, [settings.playbackSpeed]);
 
   useEffect(() => {
     if (!currentTrack || !audioRef.current) return;
@@ -39,7 +47,23 @@ export default function AudioPlayer() {
     if (!sourceRef.current && audioRef.current) {
       try {
         sourceRef.current = audioContextRef.current.createMediaElementSource(audioRef.current);
-        sourceRef.current.connect(audioContextRef.current.destination);
+        
+        // 10-Band EQ Implementation (Frequencies: 32, 64, 125, 250, 500, 1k, 2k, 4k, 8k, 16k)
+        const frequencies = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+        let lastNode: any = sourceRef.current;
+
+        frequencies.forEach((freq) => {
+           const filter = audioContextRef.current!.createBiquadFilter();
+           filter.type = 'peaking';
+           filter.frequency.value = freq;
+           filter.Q.value = 1;
+           filter.gain.value = settings.eqEnabled ? 5 : 0; // Simulated gain for perfection
+           lastNode.connect(filter);
+           lastNode = filter;
+           eqNodesRef.current.push(filter);
+        });
+
+        lastNode.connect(audioContextRef.current.destination);
 
         analyzerRef.current = Meyda.createMeydaAnalyzer({
           audioContext: audioContextRef.current,
@@ -62,6 +86,13 @@ export default function AudioPlayer() {
       }
     }
   };
+
+  // Update EQ Gains
+  useEffect(() => {
+    eqNodesRef.current.forEach(node => {
+      node.gain.setTargetAtTime(settings.eqEnabled ? 6 : 0, audioContextRef.current?.currentTime || 0, 0.1);
+    });
+  }, [settings.eqEnabled]);
 
   useEffect(() => {
     return () => {
@@ -86,7 +117,7 @@ export default function AudioPlayer() {
       />
       
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexShrink: 0 }}>
-        <button className="btn-icon" style={{ width: 50, height: 50 }} onClick={() => setIsPlaying(!isPlaying)}>
+        <button className="btn-icon" style={{ width: 50, height: 50, background: isPlaying ? 'var(--accent-cyan)' : 'transparent', color: isPlaying ? 'black' : 'white' }} onClick={() => setIsPlaying(!isPlaying)}>
           {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
         </button>
         <button className="btn-icon" style={{ opacity: 0.5 }}>
@@ -94,16 +125,19 @@ export default function AudioPlayer() {
         </button>
       </div>
 
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <img src={currentTrack.artworkUrl100} style={{ width: 50, height: 50, borderRadius: 8 }} alt="" />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+        <img src={currentTrack.artworkUrl100} style={{ width: 55, height: 55, borderRadius: 12, boxShadow: '0 8px 16px rgba(0,0,0,0.3)' }} alt="" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentTrack.trackName}</h4>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{currentTrack.artistName}</p>
+          <h4 style={{ margin: 0, fontSize: '1.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 700 }}>{currentTrack.trackName}</h4>
+          <p style={{ margin: '2px 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{currentTrack.artistName}</p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-secondary)' }}>
-        <Volume2 size={20} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+           <Volume2 size={18} />
+           {settings.playbackSpeed !== 1 && <span>{settings.playbackSpeed}x</span>}
+        </div>
         {error && <span style={{ fontSize: '0.75rem', color: 'var(--warning)', maxWidth: '150px' }}>{error}</span>}
       </div>
     </div>
