@@ -27,8 +27,8 @@ interface AppState {
   micAudioData: { rms: number; energy: number; zcr: number } | null;
   setMicAudioData: (data: { rms: number; energy: number; zcr: number } | null) => void;
 
-  appMode: 'home' | 'artists' | 'timemachine' | 'scanner';
-  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner') => void;
+  appMode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio';
+  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio') => void;
 
   selectedArtist: any | null;
   setSelectedArtist: (artist: any | null) => void;
@@ -80,7 +80,7 @@ export const useAppStore = create<AppState>((set) => ({
   setMicAudioData: (data) => set({ micAudioData: data }),
   
   appMode: 'home',
-  setAppMode: (mode) => set({ appMode: mode, selectedArtist: null }),
+  setAppMode: (mode) => set({ appMode: mode, selectedArtist: null, searchQuery: '' }),
 
   selectedArtist: null,
   setSelectedArtist: (artist) => set({ selectedArtist: artist }),

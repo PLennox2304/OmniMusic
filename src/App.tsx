@@ -22,7 +22,6 @@ export default function App() {
     isListening, setIsListening
   } = useAppStore();
 
-  const [showGenerator, setShowGenerator] = useState(false);
   const [cinematicMode, setCinematicMode] = useState(false);
 
   // Auth sync
@@ -108,7 +107,7 @@ export default function App() {
 
       <div className="main-wrapper">
         <header className="header container flex-between">
-          <div className="logo flex-center" onClick={() => { setAppMode('home'); setSearchQuery(''); setShowGenerator(false); }}>
+          <div className="logo flex-center" onClick={() => { setAppMode('home'); setSearchQuery(''); }}>
             <div className="logo-icon ripple"></div>
             <h1 className="logo-text">OMNI<span>MUSIC</span></h1>
           </div>
@@ -141,7 +140,10 @@ export default function App() {
             <button className="btn-icon" title="Kino-Modus" onClick={() => setCinematicMode(!cinematicMode)}>
               <Layout size={20} />
             </button>
-            <button className="btn btn-primary btn-glow flex-center" onClick={() => setShowGenerator(!showGenerator)}>
+            <button 
+              className={`btn btn-primary btn-glow flex-center ${appMode === 'aistudio' ? 'active' : ''}`} 
+              onClick={() => setAppMode('aistudio')}
+            >
               <Sparkles size={16} />
               <span>AI Studio</span>
             </button>
@@ -151,11 +153,12 @@ export default function App() {
         <div className="content-area">
           <main className="main-content container flex-center" style={{ flexDirection: 'column', marginTop: cinematicMode ? '0' : (searchQuery || appMode !== 'home' ? '2vh' : '10vh'), transition: 'all 0.5s ease' }}>
             
-            {appMode === 'timemachine' && !showGenerator && <TimeMachine />}
-            {appMode === 'scanner' && !showGenerator && <ScannerView />}
-            {showGenerator && <AIGenerator />}
+            {/* Conditional Mode Rendering - CLEAN VERSION */}
+            {appMode === 'timemachine' && <TimeMachine />}
+            {appMode === 'scanner' && <ScannerView />}
+            {appMode === 'aistudio' && <AIGenerator />}
 
-            {!showGenerator && appMode !== 'timemachine' && appMode !== 'scanner' && (
+            {(appMode === 'home' || appMode === 'artists') && (
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 
                 {/* Home Intro */}
@@ -165,7 +168,7 @@ export default function App() {
                     <p className="hero-subtitle">Erlebe Sound in einer neuen Dimension. Cloud-sync, KI-gesteuerte Discoveries und neuronale Visuals.</p>
                     <div className="hero-btns flex-center">
                       <button className="btn btn-primary btn-large" onClick={() => setAppMode('artists')}>Jetzt Entdecken</button>
-                      <button className="btn btn-glass btn-large" onClick={() => setShowGenerator(true)}>AI Song erstellen</button>
+                      <button className="btn btn-glass btn-large" onClick={() => setAppMode('aistudio')}>AI Song erstellen</button>
                     </div>
                   </div>
                 )}
@@ -196,7 +199,12 @@ export default function App() {
           0% { transform: scale(1); opacity: 1; }
           100% { transform: scale(2.5); opacity: 0; }
         }
+        .header-actions .btn.active {
+          box-shadow: 0 0 20px var(--accent-blue);
+          border: 2px solid white;
+        }
       `}</style>
     </div>
   );
 }
+
