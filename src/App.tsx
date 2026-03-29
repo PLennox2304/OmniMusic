@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Mic, Sparkles, Compass, X, Layout, Activity } from 'lucide-react';
+import { Search, Mic, Sparkles, Compass, X, Layout, Palette, Zap, Cloud } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { useAppStore } from './store';
 import { deepSearchArtist, recognizeMusic, searchiTunes } from './services/SearchService';
@@ -12,6 +12,11 @@ import Sidebar from './components/Sidebar';
 import TimeMachine from './components/TimeMachine';
 import AIGenerator from './components/AIGenerator';
 import ScannerView from './components/ScannerView';
+import DesignStudio from './components/DesignStudio';
+import PowerHub from './components/PowerHub';
+import UploadHub from './components/UploadHub';
+import PlaylistView from './components/PlaylistView';
+import { getUserUploads } from './services/StorageService';
 
 export default function App() {
   const { 
@@ -20,25 +25,52 @@ export default function App() {
     setCurrentTrack, setIsPlaying,
     userSession, setUserSession, isAnalyzing, setIsAnalyzing,
     isListening, setIsListening,
-    selectedArtist, setSelectedArtist
+    selectedArtist, setSelectedArtist,
+    theme, setUserUploads
   } = useAppStore();
 
   const [cinematicMode, setCinematicMode] = useState(false);
 
-  // Auth sync
+  // Neural Theme Engine Injection
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary-hue', theme.hue.toString());
+    root.style.setProperty('--glass-blur', `${theme.blur}px`);
+    root.style.setProperty('--glass-radius', `${theme.radius}px`);
+    
+    // Power User: Font Swapping
+    const fontMap = {
+      display: "'Outfit', sans-serif",
+      sans: "'Inter', sans-serif",
+      mono: "'Fira Code', monospace"
+    };
+    root.style.setProperty('--font-sans', fontMap[theme.font]);
+    
+    // Performance: Toggle Mesh
+    const mesh = document.querySelector('.neural-mesh') as HTMLElement;
+    if (mesh) mesh.style.display = theme.mesh ? 'block' : 'none';
+  }, [theme]);
+
+  // Auth & Cloud Sync
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserSession(session);
+      if(session) {
+        getUserUploads(session.user.id).then(setUserUploads);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserSession(session);
+      if(session) {
+        getUserUploads(session.user.id).then(setUserUploads);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [setUserSession]);
+  }, [setUserSession, setUserUploads]);
 
-  // Search Logic
+  // Search Logic (Artistic Refinement)
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery && searchQuery.length > 2 && !isListening && !isAnalyzing) {
@@ -64,7 +96,6 @@ export default function App() {
     try {
       setIsListening(true);
       setSearchQuery('Höre zu... Singe oder summe jetzt!');
-      
       await audioRecorder.startRecording();
       
       setTimeout(async () => {
@@ -114,8 +145,14 @@ export default function App() {
           </div>
 
           <div className="header-actions flex-center">
-            <button className="btn-icon" title="Entdecken" onClick={() => setAppMode('artists')}>
-              <Compass size={20} />
+            <button className="btn-icon" onClick={() => setAppMode('design')} title="Design Studio">
+              <Palette size={20} />
+            </button>
+            <button className="btn-icon" onClick={() => setAppMode('power')} title="Power Hub">
+               <Zap size={20} />
+            </button>
+            <button className="btn-icon" onClick={() => setAppMode('cloud')} title="Cloud Storage">
+               <Cloud size={20} />
             </button>
             <button className="btn-icon" title="Kino-Modus" onClick={() => setCinematicMode(!cinematicMode)}>
               <Layout size={20} />
@@ -139,10 +176,14 @@ export default function App() {
             alignItems: 'center'
           }}>
             
-            {/* Conditional Mode Rendering */}
+            {/* Conditional Mode Rendering - Phase 13 Global Matrix */}
             {appMode === 'timemachine' && <TimeMachine />}
             {appMode === 'scanner' && <ScannerView />}
             {appMode === 'aistudio' && <AIGenerator />}
+            {appMode === 'design' && <DesignStudio />}
+            {appMode === 'power' && <PowerHub />}
+            {appMode === 'cloud' && <UploadHub />}
+            {appMode === 'playlists' && <PlaylistView />}
 
             {(appMode === 'home' || appMode === 'artists') && (
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -164,19 +205,19 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Selected Artist Profile */}
+                {/* Artist Profile View */}
                 {selectedArtist && (
-                  <div className="animate-fade-in glass-panel" style={{ width: '100%', maxWidth: '900px', marginBottom: '3rem', display: 'flex', alignItems: 'flex-end', gap: '2.5rem', padding: '3rem', position: 'relative' }}>
-                     <div style={{ width: '220px', height: '220px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', flexShrink: 0 }}>
+                  <div className="animate-fade-in glass-panel" style={{ width: '100%', maxWidth: '1000px', marginBottom: '3rem', display: 'flex', alignItems: 'flex-end', gap: '3rem', padding: '4rem', position: 'relative' }}>
+                     <div style={{ width: '250px', height: '250px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', flexShrink: 0 }}>
                         <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${selectedArtist.artistName}&backgroundColor=6366f1`} alt={selectedArtist.artistName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                      </div>
-                     <div style={{ flex: 1, paddingBottom: '1rem' }}>
-                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>
-                          <Activity size={16} />
-                          <span style={{ fontSize: '0.8rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px' }}>Künstler Profile</span>
+                     <div style={{ flex: 1, paddingBottom: '1.5rem' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent-blue)', marginBottom: '0.75rem' }}>
+                          <Compass size={20} />
+                          <span style={{ fontSize: '0.9rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '3px' }}>Pro Künstler</span>
                        </div>
-                       <h2 style={{ fontSize: '4rem', margin: 0, lineHeight: 1 }}>{selectedArtist.artistName}</h2>
-                       <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', marginTop: '1rem' }}>Genre: {selectedArtist.primaryGenreName}</p>
+                       <h2 style={{ fontSize: '5rem', margin: 0, lineHeight: 1 }}>{selectedArtist.artistName}</h2>
+                       <p style={{ color: 'var(--text-secondary)', fontSize: '1.4rem', marginTop: '1.25rem' }}>{selectedArtist.primaryGenreName}</p>
                      </div>
                      <button className="btn-icon" onClick={() => setSelectedArtist(null)} style={{ position: 'absolute', top: '2rem', right: '2rem' }}>
                         <X size={20} />
@@ -184,57 +225,59 @@ export default function App() {
                   </div>
                 )}
 
-                {/* THE ARTISTIC SEARCH FIELD (Prominent) */}
+                {/* Prominent Artistic Search Wrapper */}
                 {!selectedArtist && (
                   <div className="search-wrapper animate-up" style={{ 
                     width: '100%', 
-                    maxWidth: (searchQuery ? '1000px' : '850px'), 
-                    marginBottom: '3rem',
-                    transform: searchQuery ? 'translateY(-20px)' : 'none',
-                    transition: 'all 0.5s ease'
+                    maxWidth: (searchQuery ? '1000px' : '900px'), 
+                    marginBottom: '3.5rem',
+                    transform: searchQuery ? 'translateY(-30px)' : 'none',
+                    transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
                   }}>
-                    <Search className="search-icon" size={24} />
+                    <Search className="search-icon" size={28} />
                     <input 
                       type="text" 
                       className="search-input" 
-                      placeholder={isAnalyzing ? "Analysiere Audio-DNA..." : (appMode === 'artists' ? "Künstler suchen..." : "Discovery Engine: Songs, Künstler, Lyrics...")}
+                      placeholder={isAnalyzing ? "Analysiere Audio-DNA..." : (appMode === 'artists' ? "Künstler-Nexus durchsuchen..." : "Discovery Engine: Songs, Künstler, Lyrics...")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       disabled={isAnalyzing}
                       style={{ 
+                        padding: '1.5rem 2rem 1.5rem 4.5rem',
+                        fontSize: '1.25rem',
                         borderColor: isListening ? 'var(--accent-pink)' : (isAnalyzing ? 'var(--accent-cyan)' : 'var(--glass-border)'),
-                        boxShadow: (isListening || isAnalyzing) ? `0 0 40px ${isAnalyzing ? 'rgba(0, 242, 254, 0.4)' : 'rgba(233, 100, 67, 0.4)'}` : 'none'
+                        boxShadow: (isListening || isAnalyzing) ? `0 0 50px ${isAnalyzing ? 'rgba(0, 242, 254, 0.5)' : 'rgba(233, 100, 67, 0.5)'}` : 'none'
                       }}
                     />
-                    <div className="flex-center" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', gap: '10px' }}>
-                      {searchQuery && <X size={20} className="clear-icon" onClick={() => setSearchQuery('')} style={{ cursor: 'pointer', opacity: 0.6 }} />}
+                    <div className="flex-center" style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', gap: '12px' }}>
+                      {searchQuery && <X size={24} className="clear-icon" onClick={() => setSearchQuery('')} style={{ cursor: 'pointer', opacity: 0.6 }} />}
                       <button 
                         className={`btn-icon ${isListening ? 'listening' : ''} ${isAnalyzing ? 'analyzing' : ''}`}
                         onClick={handleMicClick}
                         style={{ 
-                          width: '45px', 
-                          height: '45px', 
+                          width: '50px', 
+                          height: '50px', 
                           background: isListening ? 'var(--accent-pink)' : (isAnalyzing ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.05)'),
                           border: 'none',
-                          boxShadow: (isListening || isAnalyzing) ? `0 0 15px currentColor` : 'none'
+                          boxShadow: (isListening || isAnalyzing) ? `0 0 20px currentColor` : 'none'
                         }}
                       >
-                        <Mic size={20} color={isListening || isAnalyzing ? 'white' : 'var(--accent-cyan)'} />
+                        <Mic size={24} color={isListening || isAnalyzing ? 'white' : 'var(--accent-cyan)'} />
                         {(isListening || isAnalyzing) && <div className="mic-pulse"></div>}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Results Section */}
+                {/* Results Engine */}
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   {appMode === 'artists' && !selectedArtist && searchResults.length > 0 && (
-                    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '2rem', width: '100%', maxWidth: '1200px' }}>
+                    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2.5rem', width: '100%', maxWidth: '1300px' }}>
                       {searchResults.map((artist: any) => (
                         <div 
                           key={artist.artistId} 
                           className="glass-panel" 
-                          style={{ padding: '2rem', textAlign: 'center', cursor: 'pointer' }}
+                          style={{ padding: '2.5rem', textAlign: 'center', cursor: 'pointer', border: '1px solid transparent' }}
                           onClick={async () => {
                             setSelectedArtist(artist);
                             setIsSearching(true);
@@ -243,11 +286,11 @@ export default function App() {
                             setIsSearching(false);
                           }}
                         >
-                          <div style={{ width: '120px', height: '120px', margin: '0 auto 1.5rem', borderRadius: '50%', overflow: 'hidden' }}>
+                          <div style={{ width: '140px', height: '140px', margin: '0 auto 2rem', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
                             <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${artist.artistName}&backgroundColor=random`} alt={artist.artistName} />
                           </div>
-                          <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>{artist.artistName}</h3>
-                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{artist.primaryGenreName}</p>
+                          <h3 style={{ fontSize: '1.4rem', marginBottom: '0.4rem' }}>{artist.artistName}</h3>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{artist.primaryGenreName}</p>
                         </div>
                       ))}
                     </div>
@@ -279,6 +322,11 @@ export default function App() {
         @keyframes mic-pulse {
           0% { transform: scale(1); opacity: 1; }
           100% { transform: scale(2.5); opacity: 0; }
+        }
+        .header-actions .btn-icon:hover {
+           background: var(--accent-cyan);
+           color: black;
+           box-shadow: 0 0 20px var(--accent-cyan);
         }
       `}</style>
     </div>

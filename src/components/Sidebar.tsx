@@ -1,5 +1,5 @@
 import { useState, useTransition, memo } from 'react';
-import { Home, Users, Clock, ListMusic, UserCircle, LogOut, Radar, Sparkles } from 'lucide-react';
+import { Home, Users, Clock, ListMusic, UserCircle, LogOut, Radar, Sparkles, Palette, Zap, Cloud } from 'lucide-react';
 import { useAppStore } from '../store';
 import AuthModal from './AuthModal';
 
@@ -20,6 +20,9 @@ function Sidebar() {
     { id: 'timemachine', icon: <Clock size={20} />, label: 'Zeitmaschine' },
     { id: 'scanner', icon: <Radar size={20} />, label: 'Galactic Scanner' },
     { id: 'aistudio', icon: <Sparkles size={20} />, label: 'AI Studio' },
+    { id: 'design', icon: <Palette size={20} />, label: 'Design Studio' },
+    { id: 'power', icon: <Zap size={20} />, label: 'Power Hub' },
+    { id: 'cloud', icon: <Cloud size={20} />, label: 'Cloud Storage' },
   ];
 
   return (

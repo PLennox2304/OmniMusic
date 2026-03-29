@@ -1,11 +1,13 @@
-import { useEffect } from 'react';
-import { Play, Activity, ExternalLink, Heart } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Play, Activity, ExternalLink, Heart, Plus } from 'lucide-react';
+import AddToPlaylistModal from './AddToPlaylistModal';
 import { supabase } from '../services/supabaseClient';
 import { useAppStore } from '../store';
 import type { ITunesTrack } from '../services/SearchService';
 
 export default function SearchResults() {
   const { searchResults, isSearching, currentTrack, setCurrentTrack, setIsPlaying, userSession, userFavorites, toggleFavorite, setUserFavorites } = useAppStore();
+  const [trackToPlaylist, setTrackToPlaylist] = useState<any | null>(null);
 
   // Load favorites from Supabase on mount
   useEffect(() => {
@@ -114,6 +116,14 @@ export default function SearchResults() {
             >
               <Heart size={16} fill={userFavorites.some(t => t.trackId === track.trackId) ? "currentColor" : "none"} />
             </button>
+            <button 
+              className="btn-icon" 
+              title="Zu Playlist hinzufügen"
+              style={{ flexShrink: 0, width: '36px', height: '36px', color: 'var(--accent-cyan)', borderColor: 'var(--accent-cyan)' }}
+              onClick={(e) => { e.stopPropagation(); setTrackToPlaylist(track); }}
+            >
+              <Plus size={16} />
+            </button>
             <a 
               href={`https://www.youtube.com/results?search_query=${encodeURIComponent(track.artistName + ' ' + track.trackName)}`}
               target="_blank"
@@ -127,6 +137,9 @@ export default function SearchResults() {
           </div>
         ))}
       </div>
+      {trackToPlaylist && (
+         <AddToPlaylistModal track={trackToPlaylist} onClose={() => setTrackToPlaylist(null)} />
+      )}
     </div>
   );
 }

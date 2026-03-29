@@ -27,8 +27,8 @@ interface AppState {
   micAudioData: { rms: number; energy: number; zcr: number } | null;
   setMicAudioData: (data: { rms: number; energy: number; zcr: number } | null) => void;
 
-  appMode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio';
-  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio') => void;
+  appMode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists';
+  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists') => void;
 
   selectedArtist: any | null;
   setSelectedArtist: (artist: any | null) => void;
@@ -50,6 +50,30 @@ interface AppState {
 
   isListening: boolean;
   setIsListening: (listening: boolean) => void;
+
+  // Phase 13: 150+ Power Features
+  theme: {
+    hue: number;
+    blur: number;
+    radius: number;
+    glow: boolean;
+    mesh: boolean;
+    layout: 'sidebar-left' | 'sidebar-bottom' | 'compact';
+    font: 'sans' | 'display' | 'mono';
+  };
+  setTheme: (theme: Partial<AppState['theme']>) => void;
+
+  settings: {
+    eqEnabled: boolean;
+    crossfade: number;
+    playbackSpeed: number;
+    shortcuts: boolean;
+    visualizerMode: 'sphere' | 'neural' | 'bars' | 'wave';
+  };
+  setSettings: (settings: Partial<AppState['settings']>) => void;
+
+  userUploads: any[];
+  setUserUploads: (uploads: any[]) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -112,5 +136,28 @@ export const useAppStore = create<AppState>((set) => ({
   setIsAnalyzing: (analyzing) => set({ isAnalyzing: analyzing }),
 
   isListening: false,
-  setIsListening: (listening) => set({ isListening: listening })
+  setIsListening: (listening) => set({ isListening: listening }),
+
+  theme: {
+    hue: 190,
+    blur: 20,
+    radius: 20,
+    glow: true,
+    mesh: true,
+    layout: 'sidebar-left',
+    font: 'display'
+  },
+  setTheme: (newTheme) => set((state) => ({ theme: { ...state.theme, ...newTheme } })),
+
+  settings: {
+    eqEnabled: false,
+    crossfade: 0,
+    playbackSpeed: 1,
+    shortcuts: true,
+    visualizerMode: 'sphere'
+  },
+  setSettings: (newSettings) => set((state) => ({ settings: { ...state.settings, ...newSettings } })),
+
+  userUploads: [],
+  setUserUploads: (uploads) => set({ userUploads: uploads })
 }));
