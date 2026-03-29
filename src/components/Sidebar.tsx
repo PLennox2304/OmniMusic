@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, useTransition, memo } from 'react';
 import { Home, Users, Clock, ListMusic, UserCircle, LogOut, Radar } from 'lucide-react';
 import { useAppStore } from '../store';
 import AuthModal from './AuthModal';
 
-export default function Sidebar() {
+function Sidebar() {
   const { appMode, setAppMode, userSession, setUserSession } = useAppStore();
   const [showAuth, setShowAuth] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const handleModeSwitch = (id: string) => {
+    startTransition(() => {
+      setAppMode(id as any);
+    });
+  };
 
   const navItems = [
     { id: 'home', icon: <Home size={20} />, label: 'Home Universe' },
@@ -25,8 +32,8 @@ export default function Sidebar() {
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => setAppMode(item.id as any)}
-              className="btn btn-glass sidebar-btn"
+              onClick={() => handleModeSwitch(item.id)}
+              className={`btn btn-glass sidebar-btn ${isPending ? 'opacity-50' : ''}`}
               style={{
                 justifyContent: 'flex-start',
                 width: '100%',
@@ -85,3 +92,5 @@ export default function Sidebar() {
     </>
   );
 }
+
+export default memo(Sidebar);
