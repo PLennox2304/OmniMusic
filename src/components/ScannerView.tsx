@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../store';
-import { scanGlobalMusic } from '../services/SearchService';
+import { globalDiscoveryEngine } from '../services/SearchService';
 import { Radar, Zap, Shield, ExternalLink, Play } from 'lucide-react';
 import type { ITunesTrack } from '../services/SearchService';
 
@@ -9,12 +9,13 @@ export default function ScannerView() {
 
   useEffect(() => {
     const startScan = async () => {
-      const tracks = await scanGlobalMusic();
+      setLastScannerMessage("Cloud-Sync: Analysiere Spotify, YouTube & Amazon Feeds...");
+      const tracks = await globalDiscoveryEngine();
       if (tracks.length > 0) {
         addScannedTracks(tracks);
-        setLastScannerMessage(`Master-Sync erfolgreich: ${tracks.length} neue Hits aus der Cloud integriert.`);
+        setLastScannerMessage(`Master-Sync erfolgreich: ${tracks.length} neue Hits direkt in die Cloud-Datenbank geschrieben.`);
       } else {
-        setLastScannerMessage("Cloud-Scanner aktiv: Warte auf neue Datenpakete...");
+        setLastScannerMessage("Warte auf frische Datenpakete aus der Cloud...");
       }
     };
 

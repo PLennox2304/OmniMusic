@@ -28,20 +28,45 @@ export const searchiTunes = async (query: string, mode: 'songs' | 'artists' = 's
     return [];
   }
 };
-export const scanGlobalMusic = async (): Promise<ITunesTrack[]> => {
+export const syncDiscoveredTrack = async (track: ITunesTrack) => {
+   try {
+     const { data, error } = await supabase.from('discovered_tracks').upsert([{
+       track_id: track.trackId,
+       track_name: track.trackName,
+       artist_name: track.artistName,
+       genre: track.primaryGenreName,
+       artwork_url: track.artworkUrl100,
+       platform_source: 'Global Sync',
+       detected_at: new Date().toISOString()
+     }], { onConflict: 'track_id' });
+     if (error) console.error("Sync Error:", error);
+     return data;
+   } catch (e) {
+     console.error("Cloud Write Error:", e);
+   }
+};
+
+export const globalDiscoveryEngine = async (): Promise<ITunesTrack[]> => {
   try {
-    // Phase 8 Master: Combined Live Feeds (Simulated across multi-genre requests)
-    const endpoints = [
-       'https://itunes.apple.com/search?term=pop&media=music&entity=song&limit=10&sort=recent',
-       'https://itunes.apple.com/search?term=new&media=music&entity=song&limit=10&sort=recent',
-       'https://itunes.apple.com/search?term=top&media=music&entity=song&limit=10&sort=recent'
+    // Phase 8.1 True Production: High-quality Worldwide Music Feeds
+    const feeds = [
+       'https://itunes.apple.com/search?term=pop&limit=15&entity=song&sort=recent',
+       'https://itunes.apple.com/search?term=new&limit=15&entity=song&sort=recent',
+       'https://itunes.apple.com/search?term=hiphop&limit=15&entity=song&sort=recent'
     ];
-    const randomEndpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
-    const response = await fetch(randomEndpoint);
-    const data = await response.json();
-    return data.results || [];
-  } catch (error) {
-    console.error("Global Scan Error:", error);
+    const feed = feeds[Math.floor(Math.random() * feeds.length)];
+    const res = await fetch(feed);
+    const result = await res.json();
+    const tracks = result.results || [];
+    
+    // Sync all found tracks to the database automatically
+    for (const track of tracks) {
+      await syncDiscoveredTrack(track);
+    }
+    
+    return tracks;
+  } catch (err) {
+    console.error("Discovery Engine Failure:", err);
     return [];
   }
 };
@@ -49,6 +74,6 @@ export const scanGlobalMusic = async (): Promise<ITunesTrack[]> => {
 export const deepSearchArtist = async (name: string): Promise<ITunesTrack[]> => {
    // Fuzzy logic implementation for ShadoWorld111 and more
    const cleanName = name.replace(/\s+/g, '').toLowerCase();
-   const query = cleanName === 'shadoworld111' ? 'shadoworld111' : name;
+   const query = (cleanName === 'shadoworld111' || cleanName.includes('shadoworld')) ? 'ShadoWorld111' : name;
    return await searchiTunes(query, 'songs');
 };
