@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '../store';
 import { scanGlobalMusic } from '../services/SearchService';
 import { Radar, Zap, Shield, ExternalLink, Play } from 'lucide-react';
@@ -6,28 +6,21 @@ import type { ITunesTrack } from '../services/SearchService';
 
 export default function ScannerView() {
   const { scannedTracks, addScannedTracks, lastScannerMessage, setLastScannerMessage, setCurrentTrack, setIsPlaying } = useAppStore();
-  const scannerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Start Global Scanner immediately
     const startScan = async () => {
-      const platforms = ["Spotify Cloud", "Apple Music", "YouTube Global", "Amazon Backend"];
-      const platform = platforms[Math.floor(Math.random() * platforms.length)];
-      setLastScannerMessage(`Scanne ${platform} nach neuen Hits...`);
-      
       const tracks = await scanGlobalMusic();
       if (tracks.length > 0) {
         addScannedTracks(tracks);
-        setLastScannerMessage(`${tracks.length} neue Datensätze von ${platform} integriert.`);
+        setLastScannerMessage(`Master-Sync erfolgreich: ${tracks.length} neue Hits aus der Cloud integriert.`);
+      } else {
+        setLastScannerMessage("Cloud-Scanner aktiv: Warte auf neue Datenpakete...");
       }
     };
 
     startScan();
-    scannerRef.current = setInterval(startScan, 30000); // 30s interval as requested
-
-    return () => {
-      if (scannerRef.current) clearInterval(scannerRef.current);
-    };
+    const interval = setInterval(startScan, 30000);
+    return () => clearInterval(interval);
   }, [addScannedTracks, setLastScannerMessage]);
 
   const handlePlay = (track: ITunesTrack) => {

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Search, Mic, Sparkles, Compass, X, Play, Layout, Activity } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { useAppStore } from './store';
-import { searchiTunes } from './services/SearchService';
+import { searchiTunes, deepSearchArtist } from './services/SearchService';
 import SearchResults from './components/SearchResults';
 import AudioPlayer from './components/AudioPlayer';
 import Visualizer3D from './components/Visualizer3D';
@@ -49,8 +49,7 @@ function App() {
            }
         }
 
-        const modeReq = (appMode === 'artists' && !selectedArtist) ? 'artists' : 'songs';
-        const results = await searchiTunes(searchQuery, modeReq);
+        const results = await deepSearchArtist(searchQuery);
         setSearchResults(results);
         setIsSearching(false);
 
