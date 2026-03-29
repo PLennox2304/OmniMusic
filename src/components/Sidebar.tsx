@@ -15,17 +15,17 @@ export default function Sidebar() {
 
   return (
     <>
-      <div className="glass-panel" style={{
+      <div className="glass-panel sidebar-container" style={{
         position: 'fixed', left: '2rem', top: '15vh', bottom: '150px', width: '250px',
         padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem', zIndex: 10
       }}>
         
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="sidebar-nav-group" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => setAppMode(item.id as any)}
-              className="btn btn-glass"
+              className="btn btn-glass sidebar-btn"
               style={{
                 justifyContent: 'flex-start',
                 width: '100%',
@@ -35,14 +35,14 @@ export default function Sidebar() {
               }}
             >
               {item.icon}
-              {item.label}
+              <span className="sidebar-btn-label">{item.label}</span>
             </button>
           ))}
           
           <div style={{ margin: '2rem 0', height: '1px', background: 'var(--glass-border)' }}></div>
           
           <button
-            className="btn btn-glass"
+            className="btn btn-glass sidebar-btn"
             style={{ justifyContent: 'flex-start', width: '100%', border: 'none' }}
             onClick={() => {
                if(userSession) {
@@ -53,11 +53,11 @@ export default function Sidebar() {
             }}
           >
             <ListMusic size={20} />
-            Meine Playlists
+            <span className="sidebar-btn-label">Meine Playlists</span>
           </button>
         </div>
 
-        <div>
+        <div className="sidebar-user-block">
           {userSession ? (
             <div className="glass-panel" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.02)' }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(to right, var(--accent-purple), var(--accent-pink))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -72,9 +72,9 @@ export default function Sidebar() {
               </button>
             </div>
           ) : (
-            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowAuth(true)}>
+            <button className="btn btn-primary sidebar-btn sidebar-user-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowAuth(true)}>
               <UserCircle size={20} />
-              Account Sync an
+              <span className="sidebar-btn-label">Account Sync an</span>
             </button>
           )}
         </div>

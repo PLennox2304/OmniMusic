@@ -2,23 +2,29 @@ export interface ITunesTrack {
   trackId: number;
   artistName: string;
   trackName: string;
-  collectionName: string;
-  previewUrl: string;
+  previewUrl: string | null;
   artworkUrl100: string;
-  releaseDate: string;
-  primaryGenreName: string;
+  collectionName: string;
 }
 
-export const searchiTunes = async (query: string): Promise<ITunesTrack[]> => {
+export interface ITunesArtist {
+  artistId: number;
+  artistName: string;
+  primaryGenreName: string;
+  artistLinkUrl?: string;
+}
+
+export const searchiTunes = async (query: string, mode: 'songs' | 'artists' = 'songs'): Promise<any[]> => {
   if (!query) return [];
   
   try {
-    // We use iTunes Search API as a reliable open database with 50M+ tracks
-    const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=24`);
+    const entity = mode === 'artists' ? 'musicArtist' : 'song';
+    // Use iTunes Search API
+    const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=${entity}&limit=50`);
     const data = await response.json();
-    return data.results as ITunesTrack[];
+    return data.results;
   } catch (error) {
-    console.error("Fehler beim Abrufen der globalen Datenbank:", error);
+    console.error("iTunes API error:", error);
     return [];
   }
 };

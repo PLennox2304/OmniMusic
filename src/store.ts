@@ -30,6 +30,9 @@ interface AppState {
   appMode: 'home' | 'artists' | 'timemachine';
   setAppMode: (mode: 'home' | 'artists' | 'timemachine') => void;
 
+  selectedArtist: any | null;
+  setSelectedArtist: (artist: any | null) => void;
+
   userSession: any | null;
   setUserSession: (session: any | null) => void;
 }
@@ -62,7 +65,10 @@ export const useAppStore = create<AppState>((set) => ({
   setMicAudioData: (data) => set({ micAudioData: data }),
   
   appMode: 'home',
-  setAppMode: (mode) => set({ appMode: mode }),
+  setAppMode: (mode) => set({ appMode: mode, selectedArtist: null }),
+
+  selectedArtist: null,
+  setSelectedArtist: (artist) => set({ selectedArtist: artist }),
 
   userSession: null,
   setUserSession: (session) => set({ userSession: session })

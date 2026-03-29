@@ -120,16 +120,15 @@ h1, h2, h3, h4, h5, h6 {
 .text-gradient {
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-fill-color: transparent;
+  color: transparent;
 }
 
 .text-gradient-purple {
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
 }
 
 /* Buttons */
@@ -217,8 +216,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .grid-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .grid-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Search Bar */
@@ -262,6 +267,84 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
+}
+
+/* Mobile Sidebar & Layout Breakpoints */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .sidebar-container {
+    position: fixed;
+    bottom: 0 !important;
+    left: 0 !important;
+    top: auto !important;
+    width: 100vw !important;
+    height: 70px !important;
+    flex-direction: row !important;
+    padding: 0 1rem !important;
+    border-radius: 0 !important;
+    z-index: 1000 !important;
+    border-top: 1px solid var(--glass-border);
+    background: rgba(10, 10, 15, 0.95) !important;
+    justify-content: space-around !important;
+  }
+  
+  .sidebar-nav-group {
+    flex-direction: row !important;
+  }
+  
+  .sidebar-btn-label {
+    display: none !important;
+  }
+  
+  .sidebar-btn {
+    width: 50px !important;
+    height: 50px !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+  }
+
+  .sidebar-user-block {
+    display: none !important; /* Hide user block on very small screens or make it an icon */
+  }
+  
+  .sidebar-user-btn {
+    display: flex !important;
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    justify-content: center !important;
+  }
+
+  .main-content-layout {
+    padding-left: 0 !important;
+    padding-bottom: 90px !important; /* Make room for bottom bar */
+  }
+
+  h1 {
+    font-size: 2.5rem !important;
+  }
+
+  .track-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-text {
+    display: none;
+  }
+  
+  header.container {
+    padding: 1rem !important;
+  }
+}
+
+.cinematic-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease-in-out;
 }
 
 ::-webkit-scrollbar-track {
