@@ -10,6 +10,7 @@ import AIGenerator from './components/AIGenerator';
 import Sidebar from './components/Sidebar';
 import TimeMachine from './components/TimeMachine';
 import GlobalTicker from './components/GlobalTicker';
+import ScannerView from './components/ScannerView';
 import Meyda from 'meyda';
 import './index.css';
 
@@ -194,9 +195,10 @@ function App() {
           <main className="main-content container flex-center" style={{ flexDirection: 'column', marginTop: cinematicMode ? '0' : (searchQuery || appMode !== 'home' ? '2vh' : '10vh'), transition: 'all 0.5s ease' }}>
             
             {appMode === 'timemachine' && !showGenerator && <TimeMachine />}
+            {appMode === 'scanner' && !showGenerator && <ScannerView />}
             {showGenerator && <AIGenerator />}
 
-            {!showGenerator && appMode !== 'timemachine' && (
+            {!showGenerator && appMode !== 'timemachine' && appMode !== 'scanner' && (
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 
                 {/* Home Intro */}

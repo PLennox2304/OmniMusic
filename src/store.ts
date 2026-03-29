@@ -27,8 +27,8 @@ interface AppState {
   micAudioData: { rms: number; energy: number; zcr: number } | null;
   setMicAudioData: (data: { rms: number; energy: number; zcr: number } | null) => void;
 
-  appMode: 'home' | 'artists' | 'timemachine';
-  setAppMode: (mode: 'home' | 'artists' | 'timemachine') => void;
+  appMode: 'home' | 'artists' | 'timemachine' | 'scanner';
+  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner') => void;
 
   selectedArtist: any | null;
   setSelectedArtist: (artist: any | null) => void;
@@ -39,6 +39,11 @@ interface AppState {
 
   userSession: any | null;
   setUserSession: (session: any | null) => void;
+
+  scannedTracks: ITunesTrack[];
+  addScannedTracks: (tracks: ITunesTrack[]) => void;
+  lastScannerMessage: string;
+  setLastScannerMessage: (msg: string) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -86,5 +91,14 @@ export const useAppStore = create<AppState>((set) => ({
   }),
 
   userSession: null,
-  setUserSession: (session) => set({ userSession: session })
+  setUserSession: (session) => set({ userSession: session }),
+
+  scannedTracks: [],
+  addScannedTracks: (newTracks) => set((state) => {
+    const existingIds = new Set(state.scannedTracks.map(t => t.trackId));
+    const uniqueNew = newTracks.filter(t => !existingIds.has(t.trackId));
+    return { scannedTracks: [...uniqueNew, ...state.scannedTracks].slice(0, 100) };
+  }),
+  lastScannerMessage: 'Scanner bereit...',
+  setLastScannerMessage: (msg) => set({ lastScannerMessage: msg })
 }));

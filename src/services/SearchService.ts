@@ -28,3 +28,17 @@ export const searchiTunes = async (query: string, mode: 'songs' | 'artists' = 's
     return [];
   }
 };
+export const scanGlobalMusic = async (): Promise<ITunesTrack[]> => {
+  try {
+    // We use different terms to simulate "diverse platform scanning"
+    const genres = ['pop', 'hip-hop', 'electronic', 'rock', 'dance'];
+    const randomGenre = genres[Math.floor(Math.random() * genres.length)];
+    
+    const response = await fetch(`https://itunes.apple.com/search?term=${randomGenre}&media=music&entity=song&limit=20&sort=recent`);
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error("Global Scan Error:", error);
+    return [];
+  }
+};

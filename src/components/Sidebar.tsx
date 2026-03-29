@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Home, Users, Clock, ListMusic, UserCircle, LogOut } from 'lucide-react';
+import { Home, Users, Clock, ListMusic, UserCircle, LogOut, Radar } from 'lucide-react';
 import { useAppStore } from '../store';
 import AuthModal from './AuthModal';
 
@@ -11,6 +11,7 @@ export default function Sidebar() {
     { id: 'home', icon: <Home size={20} />, label: 'Home Universe' },
     { id: 'artists', icon: <Users size={20} />, label: 'Künstler-Nexus' },
     { id: 'timemachine', icon: <Clock size={20} />, label: 'Zeitmaschine' },
+    { id: 'scanner', icon: <Radar size={20} />, label: 'Galactic Scanner' },
   ];
 
   return (
