@@ -8,17 +8,16 @@ function AudioReactiveSphere() {
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const audioData = useAppStore(state => state.audioData);
   const micAudioData = useAppStore(state => state.micAudioData);
+  const isListening = useAppStore(state => state.isListening);
+  const isAnalyzing = useAppStore(state => state.isAnalyzing);
 
   useFrame((state) => {
     if (!meshRef.current || !materialRef.current) return;
     
-    // Default fallback values if Meyda analysis is unavailable
-    // Add pulsing behavior linked to time
     const time = state.clock.getElapsedTime();
     let currentEnergy = Math.sin(time * 2) * 0.1 + 0.1;
     let currentRms = Math.cos(time * 3) * 0.1 + 0.1;
     
-    // Use actual Meyda data if available
     let activeData = audioData;
     if (micAudioData && micAudioData.energy > 0) activeData = micAudioData;
 
@@ -27,21 +26,23 @@ function AudioReactiveSphere() {
       currentRms = activeData.rms;
     }
 
-    // Scale mesh based on energy
     const targetScale = 1 + (currentEnergy * 0.5);
     meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
 
-    // Rotate mesh
     meshRef.current.rotation.x += 0.005 + (currentRms * 0.05);
     meshRef.current.rotation.y += 0.005 + (currentRms * 0.05);
 
-    // Change color based on energy and mode
     let hue = (time * 0.1) % 1;
     let saturation = 0.8;
     let lightness = 0.5 + currentEnergy * 0.2;
     
-    if (activeData === micAudioData && micAudioData) {
-      // Neural Pink / AI mode
+    if (isListening || isAnalyzing) {
+      // Neural Scan Mode
+      materialRef.current.color.lerp(new THREE.Color(isAnalyzing ? '#00f2fe' : '#ff00ff'), 0.2);
+      materialRef.current.emissive.lerp(new THREE.Color(isAnalyzing ? '#00f2fe' : '#904e95'), 0.2);
+      meshRef.current.rotation.y += 0.2; 
+      currentEnergy = 0.5;
+    } else if (activeData === micAudioData && micAudioData) {
       materialRef.current.color.lerp(new THREE.Color('#e96443'), 0.1);
       materialRef.current.emissive.lerp(new THREE.Color('#904e95'), 0.1);
     } else {

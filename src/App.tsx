@@ -1,196 +1,154 @@
-import { useEffect, useState, useRef } from 'react';
-import { Search, Mic, Sparkles, Compass, X, Play, Layout, Activity } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, Mic, Sparkles, Compass, X, Layout } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { useAppStore } from './store';
-import { searchiTunes, deepSearchArtist } from './services/SearchService';
+import { deepSearchArtist, recognizeMusic } from './services/SearchService';
+import { audioRecorder } from './services/AudioRecorderService';
 import SearchResults from './components/SearchResults';
 import AudioPlayer from './components/AudioPlayer';
 import Visualizer3D from './components/Visualizer3D';
-import AIGenerator from './components/AIGenerator';
+import GlobalTicker from './components/GlobalTicker';
 import Sidebar from './components/Sidebar';
 import TimeMachine from './components/TimeMachine';
-import GlobalTicker from './components/GlobalTicker';
+import AIGenerator from './components/AIGenerator';
 import ScannerView from './components/ScannerView';
-import Meyda from 'meyda';
-import './index.css';
 
-function App() {
+export default function App() {
   const { 
-    searchQuery, setSearchQuery, 
-    setIsSearching, searchResults, setSearchResults, 
-    isPlaying, setMicAudioData, micAudioData,
-    appMode, setAppMode, 
-    selectedArtist, setSelectedArtist,
-    userSession
+    appMode, setAppMode, searchQuery, setSearchQuery, 
+    setSearchResults, setIsSearching,
+    setCurrentTrack, setIsPlaying,
+    userSession, setUserSession, isAnalyzing, setIsAnalyzing,
+    isListening, setIsListening
   } = useAppStore();
 
   const [showGenerator, setShowGenerator] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [cinematicMode, setCinematicMode] = useState(false);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const micAnalyzerRef = useRef<any>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
 
-  // Auto-search logic
+  // Auth sync
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUserSession]);
+
+  // Search Logic
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
-      const q = searchQuery.trim().toLowerCase();
-      if (q.length > 2) {
+      if (searchQuery && searchQuery.length > 2 && !isListening && !isAnalyzing) {
         setIsSearching(true);
-        
-        // Smart Playlist NLP Parser
-        if (q.includes('playlist') && q.includes('und')) {
-           const names = q.replace('mache', '').replace('eine', '').replace('playlist', '').replace('mit', '').replace('von', '').split('und').map(n => n.trim()).filter(n => n);
-           if (names.length > 0) {
-             const results = await searchiTunes(`${names[0]} top hits`, 'songs'); 
-             setSearchResults(results);
-             setIsSearching(false);
-             return;
-           }
-        }
-
         const results = await deepSearchArtist(searchQuery);
         setSearchResults(results);
         setIsSearching(false);
 
-        // Log search to Supabase History
         if (userSession?.user?.id) {
            await supabase.from('search_history').insert([{ user_id: userSession.user.id, query: searchQuery }]);
         }
-      } else {
-        if (!selectedArtist) setSearchResults([]);
+      } else if (!searchQuery) {
+        setSearchResults([]);
       }
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, setSearchResults, setIsSearching, appMode, selectedArtist, userSession]);
+  }, [searchQuery, setSearchResults, setIsSearching, appMode, userSession, isListening, isAnalyzing]);
 
-  // Handle Speech Recognition (Microphone)
-  const handleMicClick = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Dein Browser unterstützt leider keine lokale Spracherkennung. Bitte verwende Chrome oder Edge.");
-      return;
-    }
+  const handleMicClick = async () => {
+    if (isListening || isAnalyzing) return;
 
-    if (isListening) return;
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'de-DE';
-    recognition.interimResults = true;
-    recognition.continuous = false;
-
-    recognition.onstart = () => {
+    try {
       setIsListening(true);
-      setSearchQuery('');
-    };
-
-    recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          setSearchQuery(event.results[i][0].transcript);
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-          setSearchQuery(interimTranscript);
-        }
-      }
-    };
-
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => {
-      setIsListening(false);
-      stopMicAnalysis();
-    };
-
-    const stopMicAnalysis = () => {
-      if (micAnalyzerRef.current) micAnalyzerRef.current.stop();
-      if (micStreamRef.current) micStreamRef.current.getTracks().forEach(t => t.stop());
-      setMicAudioData(null);
-    };
-
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      micStreamRef.current = stream;
-      if (!audioCtxRef.current) {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        audioCtxRef.current = new AudioContext();
-      }
-      if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
-
-      const source = audioCtxRef.current.createMediaStreamSource(stream);
+      setSearchQuery('Höre zu... Singe oder summe jetzt!');
       
-      micAnalyzerRef.current = Meyda.createMeydaAnalyzer({
-        audioContext: audioCtxRef.current,
-        source: source,
-        bufferSize: 512,
-        featureExtractors: ['rms', 'energy'],
-        callback: (features: any) => {
-          setMicAudioData({
-            rms: features.rms || 0,
-            energy: features.energy || 0,
-            zcr: 0
-          });
+      await audioRecorder.startRecording();
+      
+      setTimeout(async () => {
+        setIsListening(false);
+        setIsAnalyzing(true);
+        setSearchQuery('Analysiere Audio-DNA...');
+        
+        try {
+          const blob = await audioRecorder.stopRecording();
+          const track = await recognizeMusic(blob);
+          
+          if (track) {
+            setSearchQuery(track.trackName);
+            setCurrentTrack(track);
+            setIsPlaying(true);
+            setSearchResults([track]);
+          } else {
+            setSearchQuery('Keine Übereinstimmung gefunden.');
+          }
+        } catch (err) {
+          console.error(err);
+          setSearchQuery('Fehler bei der Cloud-Analyse.');
+        } finally {
+          setIsAnalyzing(false);
         }
-      });
-      micAnalyzerRef.current.start();
-      recognition.start();
-    }).catch(() => recognition.start());
+      }, 5000);
+
+    } catch (err) {
+      console.error("Mic access denied", err);
+      setIsListening(false);
+      alert("Mikrofon-Zugriff verweigert oder nicht unterstützt.");
+    }
   };
 
   return (
-    <div className="app-container" style={{ display: 'flex', flexDirection: 'column' }}>
-      {/* Global AI Ticker */}
+    <div className={`app-container ${cinematicMode ? 'cinematic' : ''}`}>
+      <Visualizer3D />
       <GlobalTicker />
+      
+      {!cinematicMode && <Sidebar />}
 
-      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
-        {/* Background & 3D Environment */}
-        <Visualizer3D isListening={isListening} />
-        <div className={`ambient-background ${cinematicMode ? 'cinematic-hidden' : ''}`} style={{ opacity: isPlaying || isListening ? 0 : 1 }}>
-          <div className="ambient-glow glow-1"></div>
-          <div className="ambient-glow glow-2"></div>
-          <div className="neural-mesh"></div>
-        </div>
+      <div className="main-wrapper">
+        <header className="header container flex-between">
+          <div className="logo flex-center" onClick={() => { setAppMode('home'); setSearchQuery(''); setShowGenerator(false); }}>
+            <div className="logo-icon ripple"></div>
+            <h1 className="logo-text">OMNI<span>MUSIC</span></h1>
+          </div>
 
-        {/* Global Interface */}
-        <div className={cinematicMode ? 'cinematic-hidden' : ''}>
-          <Sidebar />
-        </div>
-
-        <div className={`main-content-layout ${cinematicMode ? 'cinematic-full' : ''}`} style={{ flex: 1, paddingLeft: cinematicMode ? '0' : '280px', position: 'relative' }}>
-          
-          {/* Exit Cinematic Mode Button */}
-          {cinematicMode && (
-            <button 
-              className="btn btn-icon" 
-              style={{ position: 'fixed', top: '2rem', right: '2rem', zIndex: 1000, background: 'rgba(255,255,255,0.1)' }}
-              onClick={() => setCinematicMode(false)}
+          <div className="search-pill flex-center">
+            <Search size={18} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder={isAnalyzing ? "Analysiere..." : "Suche Galaxien, Künstler oder Genres..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isAnalyzing}
+            />
+            {searchQuery && (
+              <X size={18} className="clear-icon" onClick={() => setSearchQuery('')} />
+            )}
+            <div 
+              className={`mic-btn flex-center ${isListening ? 'listening' : ''} ${isAnalyzing ? 'analyzing' : ''}`} 
+              onClick={handleMicClick}
             >
-              <X size={24} />
-            </button>
-          )}
-
-          <header className={`container ${cinematicMode ? 'cinematic-hidden' : ''}`} style={{ padding: '2rem 2rem 1rem 2rem' }}>
-            <div className="flex-between">
-              <div className="logo flex-center" style={{ gap: '0.75rem', cursor: 'pointer' }} onClick={() => { setShowGenerator(false); setAppMode('home'); setSelectedArtist(null); }}>
-                <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Compass color="white" size={24} />
-                </div>
-                <h1 style={{ margin: 0, fontSize: '1.75rem' }} className="text-gradient logo-text">OmniMusic</h1>
-              </div>
-              
-              <nav style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                <button className="btn btn-glass" style={{ padding: '0.5rem 1rem' }} onClick={() => setCinematicMode(true)}>
-                  <Layout size={18} />
-                  <span className="logo-text">Kino-Modus</span>
-                </button>
-                <button className="btn btn-primary" style={{ gap: '0.5rem' }} onClick={() => setShowGenerator(true)}>
-                  <Sparkles size={18} />
-                  <span className="logo-text">KI Generator</span>
-                </button>
-              </nav>
+              <Mic size={18} />
+              {(isListening || isAnalyzing) && <div className="mic-pulse"></div>}
             </div>
-          </header>
+          </div>
 
+          <div className="header-actions flex-center">
+            <button className="btn-icon" title="Entdecken" onClick={() => setAppMode('artists')}>
+              <Compass size={20} />
+            </button>
+            <button className="btn-icon" title="Kino-Modus" onClick={() => setCinematicMode(!cinematicMode)}>
+              <Layout size={20} />
+            </button>
+            <button className="btn btn-primary btn-glow flex-center" onClick={() => setShowGenerator(!showGenerator)}>
+              <Sparkles size={16} />
+              <span>AI Studio</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="content-area">
           <main className="main-content container flex-center" style={{ flexDirection: 'column', marginTop: cinematicMode ? '0' : (searchQuery || appMode !== 'home' ? '2vh' : '10vh'), transition: 'all 0.5s ease' }}>
             
             {appMode === 'timemachine' && !showGenerator && <TimeMachine />}
@@ -202,126 +160,43 @@ function App() {
                 
                 {/* Home Intro */}
                 {!searchQuery && appMode === 'home' && (
-                  <div className="animate-fade-in" style={{ textAlign: 'center', marginBottom: '3rem', maxWidth: '800px' }}>
-                    <h1 style={{ fontSize: '4.5rem', marginBottom: '1rem', lineHeight: 1.1 }}>
-                      Höre die <span className="text-gradient-purple">Zukunft</span>
-                    </h1>
-                    <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
-                      Deine KI-gesteuerte Musikwelt. Grenzenlos, Smart und Responsive.
-                    </p>
-                  </div>
-                )}
-
-                {/* Artist Search Intro */}
-                {appMode === 'artists' && !selectedArtist && !searchQuery && (
-                  <div className="animate-fade-in" style={{ width: '100%', textAlign: 'center', marginBottom: '3rem' }}>
-                     <h2 style={{ fontSize: '3rem' }}>Künstler-Nexus</h2>
-                     <p style={{ color: 'var(--text-secondary)' }}>Finde deine Idole und entdecke ihre gesamte Diskografie.</p>
-                  </div>
-                )}
-
-                {/* Selected Artist Profile (Spotify Style) */}
-                {selectedArtist && (
-                  <div className="animate-fade-in" style={{ width: '100%', maxWidth: '900px', marginBottom: '3rem', display: 'flex', alignItems: 'flex-end', gap: '2.5rem', padding: '3rem', background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)', borderRadius: '32px', border: '1px solid var(--glass-border)' }}>
-                     <div style={{ width: '220px', height: '220px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', flexShrink: 0 }}>
-                        <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${selectedArtist.artistName}&backgroundColor=6366f1`} alt={selectedArtist.artistName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                     </div>
-                     <div style={{ flex: 1, paddingBottom: '1rem' }}>
-                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-blue)', marginBottom: '0.5rem' }}>
-                          <Play size={16} fill="currentColor" />
-                          <span style={{ fontSize: '0.8rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px' }}>Populärer Künstler</span>
-                       </div>
-                       <h2 style={{ fontSize: '4.5rem', margin: 0, lineHeight: 1 }}>{selectedArtist.artistName}</h2>
-                       <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', marginTop: '1rem' }}>Genre: {selectedArtist.primaryGenreName}</p>
-                     </div>
-                     <button className="btn btn-icon" onClick={() => { setSelectedArtist(null); setSearchQuery(''); }} style={{ position: 'absolute', top: '2rem', right: '2rem' }}>
-                        <X size={20} />
-                     </button>
-                  </div>
-                )}
-
-                {/* Search Bar UI */}
-                {!selectedArtist && (
-                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div className="search-wrapper" style={{ width: '100%', maxWidth: '750px', marginBottom: '1.5rem' }}>
-                      <Search className="search-icon" size={24} />
-                      <input 
-                        type="text" 
-                        className="search-input" 
-                        placeholder={appMode === 'artists' ? "Künstler suchen... (z.B. Eminem, Justice)" : "Songs, Künstler, Lyrics..."}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{ borderColor: isListening ? 'var(--accent-pink)' : 'var(--glass-border)' }}
-                      />
-                      <button className="btn-icon" style={{ position: 'absolute', right: '10px', top: '10px', width: '40px', height: '40px', border: 'none', background: isListening ? 'var(--accent-pink)' : 'var(--bg-surface)' }} onClick={handleMicClick}>
-                        <Mic size={20} color={isListening ? 'white' : 'var(--accent-cyan)'} />
-                      </button>
+                  <div className="hero-section text-center animate-up">
+                    <h2 className="hero-title">Deine Musik. <br/>Deine Galaxie.</h2>
+                    <p className="hero-subtitle">Erlebe Sound in einer neuen Dimension. Cloud-sync, KI-gesteuerte Discoveries und neuronale Visuals.</p>
+                    <div className="hero-btns flex-center">
+                      <button className="btn btn-primary btn-large" onClick={() => setAppMode('artists')}>Jetzt Entdecken</button>
+                      <button className="btn btn-glass btn-large" onClick={() => setShowGenerator(true)}>AI Song erstellen</button>
                     </div>
-                    
-                    {isListening && (
-                      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                           <div className="pulse-mic"></div>
-                           <span style={{ fontSize: '1.1rem', color: 'var(--accent-pink)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px' }}>AI Overlord erkennt Melodie...</span>
-                        </div>
-                        {micAudioData && (
-                          <div className="glass-panel" style={{ padding: '0.5rem 1.5rem', borderRadius: '20px', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <Activity size={14} color="var(--accent-cyan)" />
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Frequenz DNA:</span>
-                              <span style={{ fontSize: '0.9rem', color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{Math.floor(micAudioData.rms * 1000)} Hz</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <Sparkles size={14} color="var(--accent-purple)" />
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Klang-Energie:</span>
-                              <span style={{ fontSize: '0.9rem', color: 'var(--accent-purple)', fontWeight: 'bold' }}>{Math.floor(micAudioData.energy * 100)}%</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* Artist Cards Results */}
-                {appMode === 'artists' && !selectedArtist && searchResults.length > 0 && (
-                  <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '2rem', width: '100%', maxWidth: '1200px' }}>
-                    {searchResults.map((artist: any) => (
-                      <div 
-                        key={artist.artistId} 
-                        className="glass-panel" 
-                        style={{ padding: '2rem', textAlign: 'center', cursor: 'pointer' }}
-                        onClick={async () => {
-                          setSelectedArtist(artist);
-                          setIsSearching(true);
-                          const songs = await searchiTunes(artist.artistName, 'songs');
-                          setSearchResults(songs);
-                          setIsSearching(false);
-                        }}
-                      >
-                        <div style={{ width: '130px', height: '130px', margin: '0 auto 1.5rem', borderRadius: '50%', overflow: 'hidden' }}>
-                          <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${artist.artistName}&backgroundColor=random`} alt={artist.artistName} />
-                        </div>
-                        <h3 style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>{artist.artistName}</h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{artist.primaryGenreName}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Song Results */}
-                {(appMode !== 'artists' || selectedArtist) && <SearchResults />}
+                {/* Results Section */}
+                <SearchResults />
               </div>
             )}
           </main>
         </div>
-      </div>
 
-      <div className={cinematicMode ? 'cinematic-hidden' : ''}>
         <AudioPlayer />
       </div>
+
+      <style>{`
+        .mic-btn.listening { color: var(--accent-pink); }
+        .mic-btn.analyzing { color: var(--accent-cyan); animation: rotate 2s linear infinite; }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        .mic-pulse {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          border: 2px solid currentColor;
+          animation: mic-pulse 1.5s ease-out infinite;
+        }
+        @keyframes mic-pulse {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
-
-export default App;

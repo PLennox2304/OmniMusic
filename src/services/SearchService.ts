@@ -80,3 +80,27 @@ export const deepSearchArtist = async (name: string): Promise<ITunesTrack[]> => 
    const query = (cleanName === 'shadoworld111' || cleanName.includes('shadoworld')) ? 'ShadoWorld111' : name;
    return await searchiTunes(query, 'songs');
 };
+export const recognizeMusic = async (audioBlob: Blob): Promise<ITunesTrack | null> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', audioBlob);
+    formData.append('api_token', 'test'); 
+    formData.append('return', 'apple_music,spotify');
+
+    const response = await fetch('https://api.audd.io/', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+    if (data.status === 'success' && data.result) {
+      const { title, artist } = data.result;
+      const tracks = await searchiTunes(`${artist} ${title}`, 'songs');
+      return tracks.length > 0 ? tracks[0] : null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Music Recognition Error:", error);
+    return null;
+  }
+};

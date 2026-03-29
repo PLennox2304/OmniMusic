@@ -44,6 +44,12 @@ interface AppState {
   addScannedTracks: (tracks: ITunesTrack[]) => void;
   lastScannerMessage: string;
   setLastScannerMessage: (msg: string) => void;
+
+  isAnalyzing: boolean;
+  setIsAnalyzing: (analyzing: boolean) => void;
+
+  isListening: boolean;
+  setIsListening: (listening: boolean) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -100,5 +106,11 @@ export const useAppStore = create<AppState>((set) => ({
     return { scannedTracks: [...uniqueNew, ...state.scannedTracks].slice(0, 100) };
   }),
   lastScannerMessage: 'Scanner bereit...',
-  setLastScannerMessage: (msg) => set({ lastScannerMessage: msg })
+  setLastScannerMessage: (msg) => set({ lastScannerMessage: msg }),
+
+  isAnalyzing: false,
+  setIsAnalyzing: (analyzing) => set({ isAnalyzing: analyzing }),
+
+  isListening: false,
+  setIsListening: (listening) => set({ isListening: listening })
 }));
