@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Mic2, Music, Sparkles } from 'lucide-react';
+import { Mic2, Sparkles } from 'lucide-react';
 
 interface LyricLine {
   time: number;

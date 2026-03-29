@@ -27,8 +27,8 @@ interface AppState {
   micAudioData: { rms: number; energy: number; zcr: number } | null;
   setMicAudioData: (data: { rms: number; energy: number; zcr: number } | null) => void;
 
-  appMode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists' | 'social' | 'profile';
-  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists' | 'social' | 'profile') => void;
+  appMode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists' | 'social' | 'profile' | 'creator';
+  setAppMode: (mode: 'home' | 'artists' | 'timemachine' | 'scanner' | 'aistudio' | 'design' | 'power' | 'cloud' | 'playlists' | 'social' | 'profile' | 'creator') => void;
 
   selectedArtist: any | null;
   setSelectedArtist: (artist: any | null) => void;

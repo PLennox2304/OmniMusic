@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Mic, Sparkles, Compass, X, Layout, Palette, Zap, Cloud, Users, UserCircle, Crown, Activity } from 'lucide-react';
+import { Search, Mic, Sparkles, Compass, X, Layout, Palette, Zap, Users, UserCircle, Crown, Activity, Cloud } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 import { useAppStore } from './store';
 import { deepSearchArtist, recognizeMusic, searchiTunes } from './services/SearchService';
@@ -25,6 +25,7 @@ import LyricsKaraoke from './components/LyricsKaraoke';
 import { getUserUploads } from './services/StorageService';
 
 export default function App() {
+  const state = useAppStore();
   const { 
     appMode, setAppMode, searchQuery, setSearchQuery, 
     searchResults, setSearchResults, setIsSearching,
@@ -33,7 +34,7 @@ export default function App() {
     isListening, setIsListening,
     selectedArtist, setSelectedArtist,
     theme, setUserUploads, userProfile, addXP, settings
-  } = useAppStore();
+  } = state;
 
   const [cinematicMode, setCinematicMode] = useState(false);
 
@@ -81,12 +82,12 @@ export default function App() {
     if (isPlaying && currentTrack) {
        const xpInterval = setInterval(() => {
           addXP(5);
-       }, 30000); // 5 XP every 30 seconds of listening
+       }, 30000); 
        return () => clearInterval(xpInterval);
     }
   }, [isPlaying, currentTrack, addXP]);
 
-  // Search Logic (Artistic Refinement)
+  // Search Logic
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery && searchQuery.length > 2 && !isListening && !isAnalyzing) {
@@ -111,13 +112,13 @@ export default function App() {
 
     try {
       setIsListening(true);
-      setSearchQuery('Höre zu... Singe oder summe jetzt!');
+      setSearchQuery('Höre zu...');
       await audioRecorder.startRecording();
       
       setTimeout(async () => {
         setIsListening(false);
         setIsAnalyzing(true);
-        setSearchQuery('Analysiere Audio-DNA...');
+        setSearchQuery('Analysiere...');
         
         try {
           const blob = await audioRecorder.stopRecording();
@@ -128,22 +129,21 @@ export default function App() {
             setCurrentTrack(track);
             setIsPlaying(true);
             setSearchResults([track]);
-            addXP(50); // Massive XP for discovering via mic
+            addXP(50);
           } else {
-            setSearchQuery('Keine Übereinstimmung gefunden.');
+            setSearchQuery('Kein Treffer.');
           }
         } catch (err) {
           console.error(err);
-          setSearchQuery('Fehler bei der Cloud-Analyse.');
+          setSearchQuery('Cloud-Fehler.');
         } finally {
           setIsAnalyzing(false);
         }
       }, 5000);
 
     } catch (err) {
-      console.error("Mic access denied", err);
+      console.error(err);
       setIsListening(false);
-      alert("Mikrofon-Zugriff verweigert oder nicht unterstützt.");
     }
   };
 
@@ -161,7 +161,6 @@ export default function App() {
             <h1 className="logo-text">OMNI<span>MUSIC</span></h1>
           </div>
 
-          {/* God Mode XP Bar */}
           {!cinematicMode && userProfile && (
              <div className="flex-center" style={{ gap: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.5rem 1.5rem', borderRadius: '50px', border: '1px solid var(--glass-border)' }}>
                 <div style={{ textAlign: 'right' }}>
@@ -182,6 +181,9 @@ export default function App() {
             </button>
             <button className="btn-icon" onClick={() => setAppMode('creator')} title="Creator Nexus">
               <Crown size={20} />
+            </button>
+            <button className="btn-icon" onClick={() => setAppMode('cloud')} title="Cloud Storage">
+              <Cloud size={20} />
             </button>
             <button className="btn-icon" onClick={() => setAppMode('design')} title="Design Studio">
               <Palette size={20} />
@@ -212,7 +214,6 @@ export default function App() {
             paddingBottom: '200px'
           }}>
             
-            {/* Conditional Mode Rendering - Phase 15 God Mode Matrix */}
             {appMode === 'timemachine' && <TimeMachine />}
             {appMode === 'scanner' && <ScannerView />}
             {appMode === 'aistudio' && <AIGenerator />}
@@ -226,8 +227,6 @@ export default function App() {
 
             {(appMode === 'home' || appMode === 'artists') && (
               <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
-                
-                {/* Hero Header */}
                 {!searchQuery && !selectedArtist && (
                   <div className="hero-section text-center animate-up" style={{ marginBottom: '1rem' }}>
                     {appMode === 'home' ? (
@@ -244,7 +243,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Artist Profile View */}
                 {selectedArtist && (
                   <div className="animate-fade-in glass-panel" style={{ width: '100%', maxWidth: '1000px', marginBottom: '1rem', display: 'flex', alignItems: 'flex-end', gap: '3rem', padding: '4rem', position: 'relative' }}>
                      <div style={{ width: '250px', height: '250px', borderRadius: '50%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', flexShrink: 0 }}>
@@ -264,7 +262,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Prominent Artistic Search Wrapper */}
                 {!selectedArtist && (
                   <div className="search-wrapper animate-up" style={{ 
                     width: '100%', 
@@ -308,11 +305,10 @@ export default function App() {
                   </div>
                 )}
 
-                {/* God Mode Intelligence Layer */}
                 {isPlaying && currentTrack && !searchQuery && (
                   <div className="animate-fade-in" style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
                      <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
-                        <button className={`btn ${settings.karaoke ? 'btn-primary' : 'btn-glass'}`} onClick={() => useAppStore.getState().setSettings({ karaoke: !settings.karaoke })}>
+                        <button className={`btn ${settings.karaoke ? 'btn-primary' : 'btn-glass'}`} onClick={() => state.setSettings({ karaoke: !settings.karaoke })}>
                            <Activity size={16} /> {settings.karaoke ? 'Lyrics Aus' : 'Karaoke Mode'}
                         </button>
                         <button className="btn btn-glass" title="Frequenz-Analyse">
@@ -325,7 +321,6 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Results Engine */}
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   {appMode === 'artists' && !selectedArtist && searchResults.length > 0 && (
                     <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2.5rem', width: '100%', maxWidth: '1300px' }}>
@@ -364,7 +359,6 @@ export default function App() {
 
       <style>{`
         .hero-title span { color: var(--accent-cyan); }
-        .mic-btn.listening, .btn-icon.listening { color: white; }
         .btn-icon.analyzing { color: white; animation: rotate 2s linear infinite; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
         .mic-pulse {
@@ -378,11 +372,6 @@ export default function App() {
         @keyframes mic-pulse {
           0% { transform: scale(1); opacity: 1; }
           100% { transform: scale(2.5); opacity: 0; }
-        }
-        .header-actions .btn-icon:hover {
-           background: var(--accent-cyan);
-           color: black;
-           box-shadow: 0 0 20px var(--accent-cyan);
         }
       `}</style>
     </div>

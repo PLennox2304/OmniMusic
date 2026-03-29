@@ -3,8 +3,10 @@ import { useAppStore } from '../store';
 
 export default function SpectrumVisualizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { audioData, isPlaying, settings, currentTrack } = useAppStore();
-  const animationRef = useRef<number>();
+  const audioData = useAppStore(state => state.audioData);
+  const isPlaying = useAppStore(state => state.isPlaying);
+  const currentTrack = useAppStore(state => state.currentTrack);
+  const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current || !isPlaying) return;
@@ -16,7 +18,6 @@ export default function SpectrumVisualizer() {
     const bands = 256;
     const barWidth = canvas.width / bands;
     
-    // Simulate frequency data for visual consistency if real FFT isn't available
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
@@ -24,7 +25,6 @@ export default function SpectrumVisualizer() {
       const rms = audioData?.rms || 0.1;
 
       for (let i = 0; i < bands; i++) {
-        // Create an organic reactive wave
         const freq = Math.sin(i * 0.1 + performance.now() * 0.005) * 20;
         const h = (energy * 150) + freq + (Math.random() * 5);
         

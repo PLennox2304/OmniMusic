@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { supabase } from '../services/supabaseClient';
-import { Activity, MessageCircle, Heart, User, MapPin, Zap } from 'lucide-react';
+import { MessageCircle, Heart, User, MapPin, Zap } from 'lucide-react';
 
 export default function SocialSpace() {
-  const { userProfile, socialFeed, setSocialFeed, userSession } = useAppStore();
+  const { socialFeed, setSocialFeed } = useAppStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

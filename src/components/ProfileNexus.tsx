@@ -1,8 +1,8 @@
 import { useAppStore } from '../store';
-import { User, Award, Activity, History, Shield, Zap, TrendingUp, Info } from 'lucide-react';
+import { User, Award, Shield, Zap, TrendingUp, Info } from 'lucide-react';
 
 export default function ProfileNexus() {
-  const { userProfile, userSession, userHistory } = useAppStore();
+  const { userProfile, userHistory } = useAppStore();
 
   if (!userProfile) return null;
 

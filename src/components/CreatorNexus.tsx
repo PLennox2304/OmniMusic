@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useAppStore } from '../store';
-import { BarChart3, Users, DollarSign, CheckCircle, TrendingUp, Music, Layout, Settings } from 'lucide-react';
+import { BarChart3, Users, DollarSign, CheckCircle, TrendingUp, Music, Layout } from 'lucide-react';
 
 export default function CreatorNexus() {
-  const { userProfile, userSession } = useAppStore();
+  const { userProfile } = useAppStore();
   const [activeTab, setActiveTab] = useState<'analytics' | 'merch' | 'payouts'>('analytics');
 
   return (

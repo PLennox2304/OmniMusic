@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
-import { Sparkles, Brain, Zap, Smile, Info, Activity } from 'lucide-react';
+import { Sparkles, Brain, Zap, Info, Activity } from 'lucide-react';
 
 export default function AIInsight() {
   const { currentTrack, audioData } = useAppStore();
