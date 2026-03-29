@@ -16,7 +16,7 @@ import ScannerView from './components/ScannerView';
 export default function App() {
   const { 
     appMode, setAppMode, searchQuery, setSearchQuery, 
-    searchResults, setSearchResults, isSearching, setIsSearching,
+    searchResults, setSearchResults, setIsSearching,
     setCurrentTrack, setIsPlaying,
     userSession, setUserSession, isAnalyzing, setIsAnalyzing,
     isListening, setIsListening,
